@@ -485,10 +485,11 @@
 
      <test><or>
 	     <equal><clip pos="1" side="tl" part="a_pers_nbr"/> <lit-tag v="p2.frm.sg"/></equal>
-		 <equal><clip pos="1" side="tl" part="a_pers_nbr"/><lit-tag v="p2.frm.pl"/></equal>
+		 <equal><clip pos="1" side="tl" part="a_pers_nbr"/> <lit-tag v="p2.frm.pl"/></equal>
 	 </or></test>
   
      <let><clip pos="1" side="tl" part="a_pers_nbr"/><lit-tag v="p2.pl"/></let>
+    
     </when>
 </choose>
 
@@ -500,10 +501,13 @@
    <choose> 
   <when>
  
-     <test><or><equal><clip pos="1" side="tl" part="poss_v"/> <lit-tag v="px2sg.frm"/></equal>
-	        <equal><clip pos="1" side="tl" part="poss_v"/><lit-tag v="px2pl.frm"/></equal></or></test>
+     <test><or>
+     	<equal><clip pos="1" side="tl" part="poss_v"/> <lit-tag v="px2sg.frm"/></equal>
+	    <equal><clip pos="1" side="tl" part="poss_v"/><lit-tag v="px2pl.frm"/></equal>
+	 </or></test>
   
     <let><clip pos="1" side="tl" part="poss_v"/><lit-tag v="px2pl"/></let>
+    
     </when>
 </choose>
     </def-macro>
@@ -518,9 +522,11 @@
                 <lit-tag v="prc_impf"/>
               </equal>
           </test>
+          
           <let>
             <clip pos="1" side="tl" part="prc_impf"/>
             <lit-tag v="gna_impf"/>
+         
           </let>
         </when>
 </choose>
@@ -1005,13 +1011,18 @@
       </pattern>
       <action>
  
-<let>
-<clip pos="1" side="tl" part="a_aspect"/><lit-tag v="gna_perf"/>
-</let>
+	<let>
+		<clip pos="1" side="tl" part="a_aspect"/><lit-tag v="gna_perf"/>
+	</let>
         <let>
+	
           <clip pos="1" side="tl" part="whole"/>
 
-          <concat><clip pos="1" side="tl" part="lem"/><clip pos="1" side="tl" part="v_trans"/><clip pos="2" side="tl" part="gna_perf"/></concat>
+          <concat>
+          	<clip pos="1" side="tl" part="lem"/>
+          	<clip pos="1" side="tl" part="v_trans"/>
+          	<clip pos="2" side="tl" part="gna_perf"/>
+          </concat>
         </let>
         <out>
           <chunk name="v" case="caseFirstWord">
@@ -1039,7 +1050,12 @@
         <let>
           <clip pos="1" side="tl" part="whole"/>
 
-          <concat><clip pos="1" side="tl" part="lem"/><clip pos="1" side="tl" part="v_trans"/><clip pos="2" side="tl" part="gn_cond"/><clip pos="2" side="tl" part="a_pers_nbr"/></concat>
+          <concat>
+          	<clip pos="1" side="tl" part="lem"/>
+          	<clip pos="1" side="tl" part="v_trans"/>
+          	<clip pos="2" side="tl" part="gn_cond"/>
+          	<clip pos="2" side="tl" part="a_pers_nbr"/>
+          </concat>
         </let>
         <out>
           <chunk name="v" case="caseFirstWord">
@@ -1069,8 +1085,11 @@
 </let>
         <let>
           <clip pos="1" side="tl" part="whole"/>
-
-          <concat><clip pos="1" side="tl" part="lem"/><clip pos="1" side="tl" part="v_trans"/><lit-tag v="abil"/><clip pos="2" side="tl" part="neg"/><lit-tag v="prog"/></concat>
+          <concat>
+          	<clip pos="1" side="tl" part="lem"/>
+          	<clip pos="1" side="tl" part="v_trans"/><lit-tag v="abil"/>
+          	<clip pos="2" side="tl" part="neg"/><lit-tag v="prog"/>
+          </concat>
         </let>
         <out>
           <chunk name="v" case="caseFirstWord">
