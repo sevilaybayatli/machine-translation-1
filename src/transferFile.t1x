@@ -930,6 +930,7 @@
 
 <rule comment="REGLA: prc_perf+vaux_prc_perf+yat_pres-14" > <!-- шыға алмай да тұр. -> çıkamıyor da -->
       <pattern>
+      
         <pattern-item n="prc_impf"/>
         <pattern-item n="vaux_prc_perf"/>
          <pattern-item n="da"/>

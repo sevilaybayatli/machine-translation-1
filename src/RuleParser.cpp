@@ -12,7 +12,8 @@ using namespace pugi;
 #include "RuleParser.h"
 
 void RuleParser::sentenceTokenizer(map<string, vector<string> >* slTokenTag,
-		map<string, vector<string> >* tlTokenTag, char* tokenizedSentence) {
+		map<string, vector<string> >* tlTokenTag, vector<string>* slTokens,
+		vector<string>* tlTokens, char* tokenizedSentence) {
 	vector<string> taggedTokens;
 
 	char * taggedToken;
@@ -29,10 +30,13 @@ void RuleParser::sentenceTokenizer(map<string, vector<string> >* slTokenTag,
 		split = strtok(taggedToken, "<>");
 		string token = split;
 
-		if (i % 2 == 0)
+		if (i % 2 == 0) {
 			(*slTokenTag)[token] = vector<string>();
-		else
+			slTokens->push_back(token);
+		} else {
 			(*tlTokenTag)[token] = vector<string>();
+			tlTokens->push_back(token);
+		}
 
 		split = strtok(NULL, "<>");
 		while (split != NULL) {
@@ -113,8 +117,10 @@ void RuleParser::matchCats(map<string, vector<string> >* slTokenCat,
 
 }
 
-void RuleParser::matchRules(map<string, vector<xml_node> >* slTokenRule,
-		map<string, vector<xml_node> >* tlTokenRule, xml_node transfer,
+void RuleParser::matchRules(
+		map<xml_node, vector<vector<string> > >* slTokenRule,
+		map<xml_node, vector<vector<string> > >* tlTokenRule,
+		vector<string> slTokens, vector<string> tlTokens, xml_node transfer,
 		map<string, vector<string> > slTokenCat,
 		map<string, vector<string> > tlTokenCat) {
 
@@ -124,28 +130,77 @@ void RuleParser::matchRules(map<string, vector<xml_node> >* slTokenRule,
 			rule = rule.next_sibling()) {
 		xml_node pattern = rule.child("pattern");
 
-		for (map<string, vector<string> >::iterator slIt = slTokenCat.begin(),
-				tlIt = tlTokenCat.begin(); slIt != slTokenCat.end();
-				++slIt, ++tlIt) {
+		// Put pattern items in vector for ease in processing
+		vector<xml_node> pattern_items;
+		for (xml_node pattern_item = pattern.first_child(); pattern_item;
+				pattern_item = pattern_item.next_sibling()) {
+			pattern_items.push_back(pattern_item);
+		}
 
-			bool applyRule = false;
-			for (xml_node pattern_item = pattern.first_child(); pattern_item;
-					pattern_item = pattern_item.next_sibling()) {
+		for (unsigned i = 0; i <= tlTokens.size() - pattern_items.size(); i++) {
 
-				for (unsigned i = 0; i < slIt->second.size(); i++) {
+			vector<string> slMatchedTokens, tlMatchedTokens;
+			for (unsigned j = 0; j < pattern_items.size(); j++) {
+
+				// match cat-item with pattern-item
+				string tlToken = tlTokens[i + j], slToken = slTokens[i + j];
+				vector<string> cats = tlTokenCat[tlToken];
+				for (unsigned k = 0; k < cats.size(); k++) {
+
 					// if cat name equals pattern item name
-					if (pattern_item.first_attribute().value()
-							== slIt->second[i]) {
-						applyRule = true;
+					if (pattern_items[j].first_attribute().value() == cats[k]) {
+						tlMatchedTokens.push_back(tlToken);
+						slMatchedTokens.push_back(slToken);
+						break;
 					}
 				}
-				if (applyRule)
-					break;
 			}
-			if (applyRule) {
-				(*slTokenRule)[slIt->first].push_back(rule);
-				(*tlTokenRule)[tlIt->first].push_back(rule);
+			// if matched tokens' size = pattern items' size
+			// then this rule is matched
+			if (tlMatchedTokens.size() == pattern_items.size()) {
+				(*tlTokenRule)[rule].push_back(tlMatchedTokens);
+				(*slTokenRule)[rule].push_back(slMatchedTokens);
+
 			}
+
 		}
+
 	}
 }
+//		bool tokenSeries = false;
+//
+//		for (xml_node pattern_item = pattern.first_child(); pattern_item;
+//				pattern_item = pattern_item.next_sibling()) {
+//
+//			vector<string> slMatchedTokens;
+//			vector<string> tlMatchedTokens;
+//			for (map<string, vector<string> >::iterator slIt =
+//					slTokenCat.begin(), tlIt = tlTokenCat.begin();
+//					slIt != slTokenCat.end(); ++slIt, ++tlIt) {
+//
+//				bool itemMatch = false;
+//				for (unsigned i = 0; i < slIt->second.size(); i++) {
+//					// if cat name equals pattern item name
+//					if (pattern_item.first_attribute().value()
+//							== slIt->second[i]) {
+//						itemMatch = true;
+//						break;
+//					}
+//				}
+//
+//				if (itemMatch) {
+//					slMatchedTokens.push_back(slIt->first);
+//					tlMatchedTokens.push_back(tlIt->first);
+//				} else if (tokenSeries) {
+//
+//				}
+//			}
+//
+//		}
+//
+//		if (ruleIndex) {
+//			(*slTokenRule)[slIt->first].push_back(
+//					pair<xml_node, int>(rule, ruleIndex));
+//			(*tlTokenRule)[tlIt->first].push_back(
+//					pair<xml_node, int>(rule, ruleIndex));
+//		}
