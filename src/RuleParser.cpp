@@ -144,9 +144,8 @@ void RuleParser::matchRules(
 
 				// match cat-item with pattern-item
 				string tlToken = tlTokens[i + j], slToken = slTokens[i + j];
-				vector<string> cats = tlTokenCat[tlToken];
+				vector<string> cats = slTokenCat[slToken];
 				for (unsigned k = 0; k < cats.size(); k++) {
-
 					// if cat name equals pattern item name
 					if (pattern_items[j].first_attribute().value() == cats[k]) {
 						tlMatchedTokens.push_back(tlToken);
@@ -160,47 +159,9 @@ void RuleParser::matchRules(
 			if (tlMatchedTokens.size() == pattern_items.size()) {
 				(*tlTokenRule)[rule].push_back(tlMatchedTokens);
 				(*slTokenRule)[rule].push_back(slMatchedTokens);
-
 			}
 
 		}
 
 	}
 }
-//		bool tokenSeries = false;
-//
-//		for (xml_node pattern_item = pattern.first_child(); pattern_item;
-//				pattern_item = pattern_item.next_sibling()) {
-//
-//			vector<string> slMatchedTokens;
-//			vector<string> tlMatchedTokens;
-//			for (map<string, vector<string> >::iterator slIt =
-//					slTokenCat.begin(), tlIt = tlTokenCat.begin();
-//					slIt != slTokenCat.end(); ++slIt, ++tlIt) {
-//
-//				bool itemMatch = false;
-//				for (unsigned i = 0; i < slIt->second.size(); i++) {
-//					// if cat name equals pattern item name
-//					if (pattern_item.first_attribute().value()
-//							== slIt->second[i]) {
-//						itemMatch = true;
-//						break;
-//					}
-//				}
-//
-//				if (itemMatch) {
-//					slMatchedTokens.push_back(slIt->first);
-//					tlMatchedTokens.push_back(tlIt->first);
-//				} else if (tokenSeries) {
-//
-//				}
-//			}
-//
-//		}
-//
-//		if (ruleIndex) {
-//			(*slTokenRule)[slIt->first].push_back(
-//					pair<xml_node, int>(rule, ruleIndex));
-//			(*tlTokenRule)[tlIt->first].push_back(
-//					pair<xml_node, int>(rule, ruleIndex));
-//		}
