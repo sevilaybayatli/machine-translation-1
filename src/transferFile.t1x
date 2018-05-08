@@ -266,9 +266,9 @@
       <attr-item tags="aor.evid"/>
       <attr-item tags="ifi.evid"/>
       <attr-item tags="past.evid"/>
-<attr-item tags="prog.evid"/>
-<attr-item tags="aor"/>
-<attr-item tags="past"/>
+	<attr-item tags="prog.evid"/>
+	<attr-item tags="aor"/>
+	<attr-item tags="past"/>
       <attr-item tags="dub.aor"/>
     </def-attr>
 
@@ -2682,7 +2682,12 @@
 <choose>
    <when>
      
-      <test><equal><clip pos="2" side="tl" part="evid"/><lit-tag v="aor.evid"/></equal></test>
+      <test>
+      <equal>
+	      <clip pos="2" side="tl" part="evid"/>
+	      <lit-tag v="aor.evid"/>
+      </equal>
+      </test>
                              
         
       <let><clip pos="2" side="tl" part="evid"/><lit-tag v="dub.aor"/></let>

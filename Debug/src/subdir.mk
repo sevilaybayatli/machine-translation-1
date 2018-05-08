@@ -5,14 +5,17 @@
 # Add inputs and outputs from these tool invocations to the build variables 
 CPP_SRCS += \
 ../src/Main.cpp \
+../src/RuleExecution.cpp \
 ../src/RuleParser.cpp 
 
 OBJS += \
 ./src/Main.o \
+./src/RuleExecution.o \
 ./src/RuleParser.o 
 
 CPP_DEPS += \
 ./src/Main.d \
+./src/RuleExecution.d \
 ./src/RuleParser.d 
 
 

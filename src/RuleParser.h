@@ -30,6 +30,7 @@ public:
 			map<string, vector<string> > slTokenCat,
 			map<string, vector<string> > tlTokenCat);
 
+	static map<string, vector<vector<string> > > getAttrs(xml_node transfer);
 };
 
 #endif /* SRC_RULEPARSER_H_ */
