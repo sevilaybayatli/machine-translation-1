@@ -93,8 +93,7 @@ int main(int argc, char **argv) {
 				tlAnalysisTokens.push_back(tlAnalysisToken);
 			}
 			RuleExecution::ruleExe(rule, &slAnalysisTokens, &tlAnalysisTokens,
-					attrs, slMatchedTokens, tlMatchedTokens, slTokenTag,
-					tlTokenTag);
+					attrs);
 
 			cout << endl << "RULE : " << rule.first_attribute().value() << endl;
 			cout << "--------------------------" << endl;

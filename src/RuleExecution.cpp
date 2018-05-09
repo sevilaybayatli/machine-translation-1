@@ -24,10 +24,7 @@ using namespace elem;
 void RuleExecution::ruleExe(xml_node rule,
 		vector<vector<string> >* slAnalysisTokens,
 		vector<vector<string> >* tlAnalysisTokens,
-		map<string, vector<vector<string> > > attrs,
-		vector<string> slMatchedTokens, vector<string> tlMatchedTokens,
-		map<string, vector<string> > slTokenTag,
-		map<string, vector<string> > tlTokenTag) {
+		map<string, vector<vector<string> > > attrs) {
 
 	for (xml_node node = rule.child(ACTION).first_child(); node;
 			node = node.next_sibling()) {
@@ -35,26 +32,24 @@ void RuleExecution::ruleExe(xml_node rule,
 		string nodeName = node.name();
 		if (nodeName == LET) {
 			letAction(node, slAnalysisTokens, tlAnalysisTokens, attrs,
-					slMatchedTokens, tlMatchedTokens, slTokenTag, tlTokenTag,
 					map<int, int>());
 		} else if (nodeName == CHOOSE) {
 			chooseAction(node, slAnalysisTokens, tlAnalysisTokens, attrs,
-					slMatchedTokens, tlMatchedTokens, slTokenTag, tlTokenTag,
 					map<int, int>());
 		} else if (nodeName == CALL_MACRO) {
-			macroAction(node, slAnalysisTokens, tlAnalysisTokens, attrs,
-					slMatchedTokens, tlMatchedTokens, slTokenTag, tlTokenTag);
+			macroAction(node, slAnalysisTokens, tlAnalysisTokens, attrs);
 		}
 	}
+}
+
+void RuleExecution::outAction() {
+
 }
 
 void RuleExecution::macroAction(xml_node callMacro,
 		vector<vector<string> >* slAnalysisTokens,
 		vector<vector<string> >* tlAnalysisTokens,
-		map<string, vector<vector<string> > > attrs,
-		vector<string> slMatchedTokens, vector<string> tlMatchedTokens,
-		map<string, vector<string> > slTokenTag,
-		map<string, vector<string> > tlTokenTag) {
+		map<string, vector<vector<string> > > attrs) {
 
 	string macroName = callMacro.attribute(N).value();
 
@@ -65,16 +60,19 @@ void RuleExecution::macroAction(xml_node callMacro,
 		paramToPattern[i] = with_param.attribute(POS).as_int();
 	}
 
-	xml_node transfer = callMacro.parent().parent().parent();
+	xml_node transfer = callMacro.parent().parent().parent().parent();
 
 	xml_node macros = transfer.child(SECTION_DEF_MACROS);
 
+//	cout << transfer.name() << callMacro.parent().name() << endl;
+
 	for (xml_node macro = macros.child(DEF_MACRO); macro;
 			macro = macro.next_sibling()) {
-		if (string(macro.name()) == macroName) {
+//		cout << string(macro.attribute(N).value()) << "   " << macroName
+//				<< endl;
+		if (string(macro.attribute(N).value()) == macroName) {
 			chooseAction(macro.child(CHOOSE), slAnalysisTokens,
-					tlAnalysisTokens, attrs, slMatchedTokens, tlMatchedTokens,
-					slTokenTag, tlTokenTag, paramToPattern);
+					tlAnalysisTokens, attrs, paramToPattern);
 			break;
 		}
 	}
@@ -87,14 +85,14 @@ vector<string> RuleExecution::findAttrPart(vector<string> tokenTags,
 	for (unsigned i = 0; i < tokenTags.size(); i++) {
 		for (unsigned j = 0; j < attrTags.size(); j++) {
 
-			if (tokenTags[i] == attrTags[j][0]) {
-				matchedTags.push_back("<" + tokenTags[i] + ">");
+			if (tokenTags[i] == ("<" + attrTags[j][0] + ">")) {
+				matchedTags.push_back(tokenTags[i]);
 				for (unsigned k = 1;
 						k < attrTags[j].size() && (k + i) < tokenTags.size();
 						k++) {
 
-					if (tokenTags[i + k] == attrTags[j][k])
-						matchedTags.push_back("<" + tokenTags[i + k] + ">");
+					if (tokenTags[i + k] == ("<" + attrTags[j][k] + ">"))
+						matchedTags.push_back(tokenTags[i + k]);
 					else
 						break;
 				}
@@ -113,23 +111,23 @@ vector<string> RuleExecution::findAttrPart(vector<string> tokenTags,
 // clip and lit-tag only, but we will make it general
 bool RuleExecution::equal(xml_node equal,
 		map<string, vector<vector<string> > > attrs,
-		vector<string> slMatchedTokens, vector<string> tlMatchedTokens,
-		map<string, vector<string> > slTokenTag,
-		map<string, vector<string> > tlTokenTag, map<int, int> paramToPattern) {
+		vector<vector<string> >* slAnalysisTokens,
+		vector<vector<string> >* tlAnalysisTokens,
+		map<int, int> paramToPattern) {
 
 	xml_node firstChild = equal.first_child();
 	vector<string> firstResult;
 
 	string firstName = firstChild.name();
 	if (firstName == CLIP) {
-		firstResult = clipAction(firstChild, attrs, slMatchedTokens,
-				tlMatchedTokens, slTokenTag, tlTokenTag, paramToPattern);
+//		cout << "HERE" << endl;
+		firstResult = clipAction(firstChild, attrs, slAnalysisTokens,
+				tlAnalysisTokens, paramToPattern);
 	} else if (firstName == CONCAT) {
-		firstResult = concat(firstChild, attrs, slMatchedTokens,
-				tlMatchedTokens, slTokenTag, tlTokenTag, paramToPattern);
+		firstResult = concat(firstChild, attrs, slAnalysisTokens,
+				tlAnalysisTokens, paramToPattern);
 	} else if (firstName == LIT_TAG) {
-		string tag = firstChild.attribute(V).value();
-		firstResult.push_back("<" + tag + ">");
+		firstResult = litTagAction(firstChild);
 	} else if (firstName == LIT) {
 		firstResult.push_back(firstChild.attribute(V).value());
 	}
@@ -139,18 +137,25 @@ bool RuleExecution::equal(xml_node equal,
 
 	string secondName = secondChild.name();
 	if (secondName == CLIP) {
-		secondResult = clipAction(secondChild, attrs, slMatchedTokens,
-				tlMatchedTokens, slTokenTag, tlTokenTag, paramToPattern);
+		secondResult = clipAction(secondChild, attrs, slAnalysisTokens,
+				tlAnalysisTokens, paramToPattern);
 	} else if (secondName == CONCAT) {
-		secondResult = concat(secondChild, attrs, slMatchedTokens,
-				tlMatchedTokens, slTokenTag, tlTokenTag, paramToPattern);
+		secondResult = concat(secondChild, attrs, slAnalysisTokens,
+				tlAnalysisTokens, paramToPattern);
 	} else if (secondName == LIT_TAG) {
-		string tag = secondChild.attribute(V).value();
-		secondResult.push_back("<" + tag + ">");
+		secondResult = litTagAction(secondChild);
 	} else if (secondName == LIT) {
 		secondResult.push_back(secondChild.attribute(V).value());
 	}
 
+//	for (unsigned i = 0; i < firstResult.size(); i++) {
+//		cout << firstResult[i] << "  ";
+//	}
+//	cout << endl;
+//	for (unsigned i = 0; i < secondResult.size(); i++) {
+//		cout << secondResult[i] << "  ";
+//	}
+//	cout << endl;
 	if (firstResult.size() != secondResult.size())
 		return false;
 
@@ -166,9 +171,7 @@ void RuleExecution::chooseAction(xml_node choose,
 		vector<vector<string> >* slAnalysisTokens,
 		vector<vector<string> >* tlAnalysisTokens,
 		map<string, vector<vector<string> > > attrs,
-		vector<string> slMatchedTokens, vector<string> tlMatchedTokens,
-		map<string, vector<string> > slTokenTag,
-		map<string, vector<string> > tlTokenTag, map<int, int> paramToPattern) {
+		map<int, int> paramToPattern) {
 
 	xml_node when = choose.child(WHEN);
 
@@ -180,14 +183,14 @@ void RuleExecution::chooseAction(xml_node choose,
 	bool result;
 
 	if (nodeName == EQUAL) {
-		result = equal(node, attrs, slMatchedTokens, tlMatchedTokens,
-				slTokenTag, tlTokenTag, paramToPattern);
+		result = equal(node, attrs, slAnalysisTokens, tlAnalysisTokens,
+				paramToPattern);
 	} else if (nodeName == AND) {
 		for (xml_node equalNode = node.first_child(); equalNode; equalNode =
 				equalNode.next_sibling()) {
 
-			result = equal(equalNode, attrs, slMatchedTokens, tlMatchedTokens,
-					slTokenTag, tlTokenTag, paramToPattern);
+			result = equal(equalNode, attrs, slAnalysisTokens, tlAnalysisTokens,
+					paramToPattern);
 			if (!result)
 				break;
 		}
@@ -195,8 +198,8 @@ void RuleExecution::chooseAction(xml_node choose,
 		for (xml_node equalNode = node.first_child(); equalNode; equalNode =
 				equalNode.next_sibling()) {
 
-			result = equal(equalNode, attrs, slMatchedTokens, tlMatchedTokens,
-					slTokenTag, tlTokenTag, paramToPattern);
+			result = equal(equalNode, attrs, slAnalysisTokens, tlAnalysisTokens,
+					paramToPattern);
 			if (result)
 				break;
 		}
@@ -206,37 +209,51 @@ void RuleExecution::chooseAction(xml_node choose,
 	if (result) {
 		for (xml_node let = when.child(LET); let; let = let.next_sibling(LET)) {
 			letAction(let, slAnalysisTokens, tlAnalysisTokens, attrs,
-					slMatchedTokens, tlMatchedTokens, slTokenTag, tlTokenTag,
 					paramToPattern);
 		}
 	}
+}
+
+vector<string> RuleExecution::litTagAction(xml_node litTag) {
+	// splitting tags by '.'
+	string tagsString = litTag.attribute(V).value();
+	char tagsChars[tagsString.size()];
+	strcpy(tagsChars, tagsString.c_str());
+
+	vector<string> tags;
+
+	char * tag;
+	tag = strtok(tagsChars, ".");
+	while (tag != NULL) {
+		tags.push_back("<" + string(tag) + ">");
+		tag = strtok(NULL, ".");
+	}
+
+	return tags;
 }
 
 void RuleExecution::letAction(xml_node let,
 		vector<vector<string> >* slAnalysisTokens,
 		vector<vector<string> >* tlAnalysisTokens,
 		map<string, vector<vector<string> > > attrs,
-		vector<string> slMatchedTokens, vector<string> tlMatchedTokens,
-		map<string, vector<string> > slTokenTag,
-		map<string, vector<string> > tlTokenTag, map<int, int> paramToPattern) {
+		map<int, int> paramToPattern) {
 
 	// it is always a clip
 	xml_node firstChild = let.first_child();
-	vector<string> firstResult = clipAction(firstChild, attrs, slMatchedTokens,
-			tlMatchedTokens, slTokenTag, tlTokenTag, paramToPattern);
+	vector<string> firstResult = clipAction(firstChild, attrs, slAnalysisTokens,
+			tlAnalysisTokens, paramToPattern);
 
 	xml_node secondChild = firstChild.next_sibling();
 	string secondName = secondChild.name();
 	vector<string> secondResult;
 	if (secondName == CLIP) {
-		secondResult = clipAction(secondChild, attrs, slMatchedTokens,
-				tlMatchedTokens, slTokenTag, tlTokenTag, paramToPattern);
+		secondResult = clipAction(secondChild, attrs, slAnalysisTokens,
+				tlAnalysisTokens, paramToPattern);
 	} else if (secondName == CONCAT) {
-		secondResult = concat(secondChild, attrs, slMatchedTokens,
-				tlMatchedTokens, slTokenTag, tlTokenTag, paramToPattern);
+		secondResult = concat(secondChild, attrs, slAnalysisTokens,
+				tlAnalysisTokens, paramToPattern);
 	} else if (secondName == LIT_TAG) {
-		string tag = secondChild.attribute(V).value();
-		secondResult.push_back("<" + tag + ">");
+		secondResult = litTagAction(secondChild);
 	} else if (secondName == LIT) {
 		secondResult.push_back(secondChild.attribute(V).value());
 	}
@@ -293,9 +310,9 @@ vector<string> RuleExecution::formatTokenTags(string token,
 
 vector<string> RuleExecution::clipAction(xml_node clip,
 		map<string, vector<vector<string> > > attrs,
-		vector<string> slMatchedTokens, vector<string> tlMatchedTokens,
-		map<string, vector<string> > slTokenTag,
-		map<string, vector<string> > tlTokenTag, map<int, int> paramToPattern) {
+		vector<vector<string> >* slAnalysisTokens,
+		vector<vector<string> >* tlAnalysisTokens,
+		map<int, int> paramToPattern) {
 
 	vector<string> result;
 
@@ -306,23 +323,22 @@ vector<string> RuleExecution::clipAction(xml_node clip,
 	string langSide = clip.attribute(SIDE).value();
 	string part = clip.attribute(PART).value();
 
-	string token;
-	vector<string> tags;
+	vector<string> analysisToken;
 	if (langSide == TL) {
-		token = tlMatchedTokens[position];
-		tags = tlTokenTag[token];
+		analysisToken = (*tlAnalysisTokens)[position];
 	} else if (langSide == SL) {
-		token = slMatchedTokens[position];
-		tags = slTokenTag[token];
+		analysisToken = (*slAnalysisTokens)[position];
 	}
+	string token = analysisToken[0];
+
 	if (part == WHOLE) {
-		result = formatTokenTags(token, tags);
+		result = analysisToken;
 	} else if (part == LEM) {
 		result.push_back(token);
 	}
 	// part == "attr"
 	else {
-		result = RuleExecution::findAttrPart(tags, attrs[part]);
+		result = RuleExecution::findAttrPart(analysisToken, attrs[part]);
 	}
 
 	return result;
@@ -330,9 +346,9 @@ vector<string> RuleExecution::clipAction(xml_node clip,
 
 vector<string> RuleExecution::concat(xml_node concat,
 		map<string, vector<vector<string> > > attrs,
-		vector<string> slMatchedToken, vector<string> tlMatchedToken,
-		map<string, vector<string> > slTokenTag,
-		map<string, vector<string> > tlTokenTag, map<int, int> paramToPattern) {
+		vector<vector<string> >* slAnalysisTokens,
+		vector<vector<string> >* tlAnalysisTokens,
+		map<int, int> paramToPattern) {
 
 	vector<string> result;
 
@@ -341,12 +357,13 @@ vector<string> RuleExecution::concat(xml_node concat,
 
 		string nodeName = node.name();
 		if (nodeName == CLIP) {
-			vector<string> clipResult = clipAction(node, attrs, slMatchedToken,
-					tlMatchedToken, slTokenTag, tlTokenTag, paramToPattern);
+			vector<string> clipResult = clipAction(node, attrs,
+					slAnalysisTokens, tlAnalysisTokens, paramToPattern);
 			result.insert(result.end(), clipResult.begin(), clipResult.end());
 		} else if (nodeName == LIT_TAG) {
-			string tag = node.attribute(V).value();
-			result.push_back("<" + tag + ">");
+			vector<string> litTagResult = litTagAction(node);
+			result.insert(result.end(), litTagResult.begin(),
+					litTagResult.end());
 		} else if (nodeName == LIT) {
 			result.push_back(node.attribute(V).value());
 		}
