@@ -14,41 +14,44 @@ using namespace std;
 using namespace pugi;
 using namespace elem;
 
-int main(int argc, char **argv) {
+int
+main (int argc, char **argv)
+{
 
-	char* tokenizedSentence;
+  char* tokenizedSentence;
 
-	if (argc == 2) {
-		tokenizedSentence = argv[1];
-	}
+  if (argc == 2)
+    {
+      tokenizedSentence = argv[1];
+    }
 
-	// tokens in the sentence order
-	vector<string> slTokens, tlTokens;
-	// map of tokens and their tags
-	map<string, vector<string> > slTokenTag, tlTokenTag;
+  // tokens in the sentence order
+  vector<string> slTokens, tlTokens;
+  // map of tokens and their tags
+  map<string, vector<string> > slTokenTag, tlTokenTag;
 
-	RuleParser::sentenceTokenizer(&slTokenTag, &tlTokenTag, &slTokens,
-			&tlTokens, tokenizedSentence);
+  RuleParser::sentenceTokenizer (&slTokenTag, &tlTokenTag, &slTokens, &tlTokens,
+				 tokenizedSentence);
 
-	// load transfer file in an xml document object
-	xml_document transferDoc;
-	xml_parse_result result = transferDoc.load_file("transferFile.t1x");
+  // load transfer file in an xml document object
+  xml_document transferDoc;
+  xml_parse_result result = transferDoc.load_file ("transferFile.t1x");
 
-	if (string(result.description()) != "No error") {
-		cout << "ERROR : " << result.description() << endl;
-		return -1;
-	}
-	// xml node of the parent node (transfer) in the transfer file
-	xml_node transfer = transferDoc.child("transfer");
+  if (string (result.description ()) != "No error")
+    {
+      cout << "ERROR : " << result.description () << endl;
+      return -1;
+    }
+  // xml node of the parent node (transfer) in the transfer file
+  xml_node transfer = transferDoc.child ("transfer");
 
-	// map of tokens and their matched categories
-	map<string, vector<string> > slTokenCat, tlTokenCat;
+  // map of tokens and their matched categories
+  map<string, vector<string> > slTokenCat, tlTokenCat;
 
-	RuleParser::matchCats(&slTokenCat, &tlTokenCat, transfer, slTokenTag,
-			tlTokenTag);
+  RuleParser::matchCats (&slTokenCat, &tlTokenCat, transfer, slTokenTag, tlTokenTag);
 
-	// map of tokens and their matched rules
-	map<xml_node, vector<vector<string> > > slTokenRule, tlTokenRule;
+  // map of tokens and their matched rules
+  map<xml_node, vector<vector<string> > > slTokenRule, tlTokenRule;
 
 //	for (unsigned int i = 0; i < slTokens.size(); i++) {
 //		cout << slTokens[i] << " : ";
@@ -67,56 +70,71 @@ int main(int argc, char **argv) {
 //	}
 //	cout << endl;
 
-	RuleParser::matchRules(&slTokenRule, &tlTokenRule, slTokens, tlTokens,
-			transfer, slTokenCat, tlTokenCat);
-//	cout << "HERE" << endl;
+  RuleParser::matchRules (&slTokenRule, &tlTokenRule, slTokens, tlTokens, transfer,
+			  slTokenCat, tlTokenCat);
 
-	map<string, vector<vector<string> > > attrs = RuleParser::getAttrs(
-			transfer);
+  map<string, vector<vector<string> > > attrs = RuleParser::getAttrs (transfer);
 
-	for (map<xml_node, vector<vector<string> > >::iterator it =
-			slTokenRule.begin(); it != slTokenRule.end(); ++it) {
-		xml_node rule = it->first;
-		for (unsigned i = 0; i < slTokenRule[rule].size(); i++) {
-			vector<vector<string> > slAnalysisTokens, tlAnalysisTokens;
-			vector<string> slMatchedTokens = slTokenRule[rule][i];
-			vector<string> tlMatchedTokens = tlTokenRule[rule][i];
-			for (unsigned j = 0; j < slMatchedTokens.size(); j++) {
-				string slToken = slMatchedTokens[j];
-				vector<string> slAnalysisToken = RuleExecution::formatTokenTags(
-						slToken, slTokenTag[slToken]);
-				slAnalysisTokens.push_back(slAnalysisToken);
+  for (map<xml_node, vector<vector<string> > >::iterator it = slTokenRule.begin ();
+      it != slTokenRule.end (); ++it)
+    {
+      xml_node rule = it->first;
+      for (unsigned i = 0; i < slTokenRule[rule].size (); i++)
+	{
+	  vector<vector<string> > slAnalysisTokens, tlAnalysisTokens;
+	  vector<string> slMatchedTokens = slTokenRule[rule][i];
+	  vector<string> tlMatchedTokens = tlTokenRule[rule][i];
+	  for (unsigned j = 0; j < slMatchedTokens.size (); j++)
+	    {
+	      string slToken = slMatchedTokens[j];
+	      vector<string> slAnalysisToken = RuleExecution::formatTokenTags (
+		  slToken, slTokenTag[slToken]);
+	      slAnalysisTokens.push_back (slAnalysisToken);
 
-				string tlToken = tlMatchedTokens[j];
-				vector<string> tlAnalysisToken = RuleExecution::formatTokenTags(
-						tlToken, tlTokenTag[tlToken]);
-				tlAnalysisTokens.push_back(tlAnalysisToken);
-			}
-			RuleExecution::ruleExe(rule, &slAnalysisTokens, &tlAnalysisTokens,
-					attrs);
+	      string tlToken = tlMatchedTokens[j];
+	      vector<string> tlAnalysisToken = RuleExecution::formatTokenTags (
+		  tlToken, tlTokenTag[tlToken]);
+	      tlAnalysisTokens.push_back (tlAnalysisToken);
+	    }
+	  vector<string> output = RuleExecution::ruleExe (rule, &slAnalysisTokens,
+							  &tlAnalysisTokens, attrs);
 
-			cout << endl << "RULE : " << rule.first_attribute().value() << endl;
-			cout << "--------------------------" << endl;
+	  cout << endl << "RULE : " << rule.first_attribute ().value () << endl;
+	  cout << "--------------------------" << endl;
 
-			cout << "sl analysis" << endl;
-			for (unsigned x = 0; x < slAnalysisTokens.size(); x++) {
-				for (unsigned y = 0; y < slAnalysisTokens[x].size(); y++) {
-					cout << slAnalysisTokens[x][y] << "  ";
-				}
-				cout << endl;
-			}
-
-			cout << "tl analysis" << endl;
-			for (unsigned x = 0; x < tlAnalysisTokens.size(); x++) {
-				tlAnalysisTokens[x].size();
-
-				for (unsigned y = 0; y < tlAnalysisTokens[x].size(); y++) {
-					cout << tlAnalysisTokens[x][y] << "  ";
-				}
-				cout << endl;
-			}
+	  cout << "sl analysis" << endl;
+	  for (unsigned x = 0; x < slAnalysisTokens.size (); x++)
+	    {
+	      for (unsigned y = 0; y < slAnalysisTokens[x].size (); y++)
+		{
+		  cout << slAnalysisTokens[x][y] << "  ";
 		}
+	      cout << endl;
+	    }
+
+	  cout << "tl analysis" << endl;
+	  for (unsigned x = 0; x < tlAnalysisTokens.size (); x++)
+	    {
+	      tlAnalysisTokens[x].size ();
+
+	      for (unsigned y = 0; y < tlAnalysisTokens[x].size (); y++)
+		{
+		  cout << tlAnalysisTokens[x][y] << "  ";
+		}
+	      cout << endl;
+	    }
+
+	  // rule's output
+	  cout << endl << endl << "OUTPUT" << endl;
+	  cout << "---------------------" << endl << endl;
+	  for (unsigned i = 0; i < output.size (); i++)
+	    {
+	      cout << output[i];
+	    }
+	  cout << endl << endl;
 	}
+    }
+
 //	xml_node rule;
 //	string comment = "REGLA: gpr_past - gpr_past id= gpr_past-gpr_past-44";
 //	for (map<xml_node, vector<vector<string> > >::iterator it =
